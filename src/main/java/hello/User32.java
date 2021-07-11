@@ -29,17 +29,18 @@ public class User32
     // in the foreground. Note that hwndTarget must be specified.
     int RIDEV_INPUTSINK = 0x00000100;
 
-    RawInputDevice[] Rid = (RawInputDevice[])(new RawInputDevice()).toArray(2);
+    RawInputDevice[] Rid = (RawInputDevice[])(new RawInputDevice()).toArray(1);
 
     Rid[0].usUsagePage = 0x01;          // HID_USAGE_PAGE_GENERIC
     Rid[0].usUsage = 0x02;              // HID_USAGE_GENERIC_MOUSE
     Rid[0].dwFlags = RIDEV_NOLEGACY | RIDEV_INPUTSINK;
     Rid[0].hwndTarget = hwndTarget;
 
-    Rid[1].usUsagePage = 0x01;          // HID_USAGE_PAGE_GENERIC
-    Rid[1].usUsage = 0x06;              // HID_USAGE_GENERIC_KEYBOARD
-    Rid[1].dwFlags = RIDEV_NOLEGACY | RIDEV_INPUTSINK;
-    Rid[1].hwndTarget = hwndTarget;
+    // commented out because I'm not interested in keyboard events right now --nathschu
+    //Rid[1].usUsagePage = 0x01;          // HID_USAGE_PAGE_GENERIC
+    //Rid[1].usUsage = 0x06;              // HID_USAGE_GENERIC_KEYBOARD
+    //Rid[1].dwFlags = RIDEV_NOLEGACY | RIDEV_INPUTSINK;
+    //Rid[1].hwndTarget = hwndTarget;
     
     if (!library.RegisterRawInputDevices(Rid, Rid.length, Rid[0].size()))
     {
@@ -67,5 +68,39 @@ public class User32
       null, null, null, null);
     if (hwnd == null || Pointer.nativeValue(hwnd) == 0) throw new Exception("blah, CreateWindowExW failed");
     return hwnd;
+  }
+  
+  public static RawMouse TryGetRawMouseEventData(int uMsg, Pointer lParam)
+  {
+    final int WM_INPUT = 0xFF;
+    switch (uMsg)
+    {
+      case WM_INPUT:
+      {
+        int RID_INPUT = 0x10000003;
+        int RIM_TYPEMOUSE = 0;
+        RawInput data = new RawInput();
+        RefLong dataSize = new RefLong(data.size());
+        int copiedSize = User32.library.GetRawInputData(lParam, RID_INPUT, data, dataSize, new RawInputHeader().size());
+        if (copiedSize != data.size())
+        {
+          //System.out.println("ignored a raw input event because copiedSize == " + Integer.toString(copiedSize, 10));
+        }
+        else if (data.header.dwType == RIM_TYPEMOUSE)
+        {
+          return data.mouse;
+        }
+        else
+        {
+          //System.out.println("ignored a raw input event because it wasn't RIM_TYPEMOUSE");
+        }
+        break;
+      }
+      default:
+      {
+        //System.out.println("wndproc hwnd=" + Long.toHexString(Pointer.nativeValue(hwnd)) + " uMsg=" + Integer.toHexString(uMsg) + " wParam" + Long.toHexString(Pointer.nativeValue(wParam)) + " lParam" + Long.toHexString(Pointer.nativeValue(lParam)));
+      }
+    }
+    return null;
   }
 }

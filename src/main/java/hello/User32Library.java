@@ -63,5 +63,16 @@ public interface User32Library extends Library
    Pointer hMenu,
    Pointer hInstance,
    Pointer lpParam) throws LastErrorException;
+
+  // Retrieves the raw input from the specified device.
+  // If pData is NULL and the function is successful, the return value is 0. If pData is not NULL and the function is successful, the return value is the number of bytes copied into pData.
+  // If there is an error, the return value is (UINT)-1.
+  // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getrawinputdata
+  int GetRawInputData(
+    Pointer hRawInput,
+    int uiCommand,
+    RawInput pData,
+    RefLong pcbSize,
+    int cbSizeHeader);
 }
 
