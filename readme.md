@@ -9,6 +9,7 @@ Building
 --------
 Built with JDK 1.8.0_231
 Do `./gradlew run` to compile and run the project.
+Source is squirrelled away in `src\main\java\hello` because java and gradle conventions are crazy-in-love with deep nested folders.
 
 Licensing
 ---------
