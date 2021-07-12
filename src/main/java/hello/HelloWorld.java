@@ -1,8 +1,10 @@
 package hello;
 
+import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
+import java.util.Scanner;
 
 public class HelloWorld
 {
@@ -10,6 +12,42 @@ public class HelloWorld
   {
     try
     {
+      RefInt numDevices = new RefInt();
+      if (-1 == User32.library.GetRawInputDeviceList(null, numDevices, new RawInputDeviceList().size()))
+      {
+        throw new Exception("GetRawInputDeviceList returned failure code when asked for number of devices");
+      }
+      
+      // // times 2 + 10 to avoid needing to handle ERROR_INSUFFICIENT_BUFFER scenarios
+      RawInputDeviceList[] devices = (RawInputDeviceList[])(new RawInputDeviceList()).toArray(numDevices.value * 2 + 10);
+      numDevices.value = devices.length;
+      int numDevices2 = User32.library.GetRawInputDeviceList(devices, numDevices, new RawInputDeviceList().size());
+      if (-1 == numDevices2)
+      {
+        throw new Exception("GetRawInputDeviceList returned failure code when asked for all devices");
+      }
+      Memory buffer = new Memory(1000);
+      for (int i = 0; i < numDevices2; i++)
+      {
+        int RIM_TYPEMOUSE = 0;
+        int RIDI_DEVICENAME = 0x20000007;
+        if (devices[i].dwType == RIM_TYPEMOUSE)
+        {
+          buffer.clear();
+          RefInt nameLen = new RefInt(499);
+          int nameCharsLen = User32.library.GetRawInputDeviceInfoW(devices[i].hDevice, RIDI_DEVICENAME, buffer, nameLen);
+          if (nameCharsLen < 0)
+          {
+            System.out.println("GetRawInputDeviceInfoW failed for some mouse device");
+          }
+          else
+          {
+            String mouseName = buffer.getWideString(0); // TODO: how to only slurp 'nameCharsLen' characters, instead of reading to null terminator?
+            System.out.println("nameCharsLen=" + Integer.toString(nameCharsLen, 10) + " nameLen=" + Integer.toString(nameLen.value, 10) + " name=" + mouseName);
+          }
+        }
+      }
+      
       WndProc wndproc = new WndProc()
       {
         public Pointer callback(Pointer hwnd, int uMsg, Pointer wParam, Pointer lParam)

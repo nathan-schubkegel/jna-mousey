@@ -80,7 +80,7 @@ public class User32
         int RID_INPUT = 0x10000003;
         int RIM_TYPEMOUSE = 0;
         RawInput data = new RawInput();
-        RefLong dataSize = new RefLong(data.size());
+        RefInt dataSize = new RefInt(data.size());
         int copiedSize = User32.library.GetRawInputData(lParam, RID_INPUT, data, dataSize, new RawInputHeader().size());
         if (copiedSize != data.size())
         {
