@@ -1,10 +1,10 @@
 package hello;
 
-import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import java.util.Scanner;
+import java.util.ArrayList;
 
 public class HelloWorld
 {
@@ -12,63 +12,37 @@ public class HelloWorld
   {
     try
     {
-      RefInt numDevices = new RefInt();
-      if (-1 == User32.library.GetRawInputDeviceList(null, numDevices, new RawInputDeviceList().size()))
+      ArrayList<Mouse> mice = User32.GetMice();
+      for (Mouse mouse : mice)
       {
-        throw new Exception("GetRawInputDeviceList returned failure code when asked for number of devices");
+        System.out.println("enumerated mouse " +
+          " hDevice=" + Long.toHexString(Pointer.nativeValue(mouse.hDevice)) +
+          " friendlyName=" + mouse.friendlyName + 
+          " hardwareId=" + mouse.hardwareId);
       }
-      
-      // // times 2 + 10 to avoid needing to handle ERROR_INSUFFICIENT_BUFFER scenarios
-      RawInputDeviceList[] devices = (RawInputDeviceList[])(new RawInputDeviceList()).toArray(numDevices.value * 2 + 10);
-      numDevices.value = devices.length;
-      int numDevices2 = User32.library.GetRawInputDeviceList(devices, numDevices, new RawInputDeviceList().size());
-      if (-1 == numDevices2)
-      {
-        throw new Exception("GetRawInputDeviceList returned failure code when asked for all devices");
-      }
-      Memory buffer = new Memory(1000);
-      for (int i = 0; i < numDevices2; i++)
-      {
-        int RIM_TYPEMOUSE = 0;
-        int RIDI_DEVICENAME = 0x20000007;
-        if (devices[i].dwType == RIM_TYPEMOUSE)
-        {
-          buffer.clear();
-          RefInt nameLen = new RefInt(499);
-          int nameCharsLen = User32.library.GetRawInputDeviceInfoW(devices[i].hDevice, RIDI_DEVICENAME, buffer, nameLen);
-          if (nameCharsLen < 0)
-          {
-            System.out.println("GetRawInputDeviceInfoW failed for some mouse device");
-          }
-          else
-          {
-            String mouseName = buffer.getWideString(0); // TODO: how to only slurp 'nameCharsLen' characters, instead of reading to null terminator?
-            System.out.println("nameCharsLen=" + Integer.toString(nameCharsLen, 10) + " nameLen=" + Integer.toString(nameLen.value, 10) + " name=" + mouseName);
-          }
-        }
-      }
-      
+
       WndProc wndproc = new WndProc()
       {
         public Pointer callback(Pointer hwnd, int uMsg, Pointer wParam, Pointer lParam)
         {
-          RawMouse mouse = User32.TryGetRawMouseEventData(uMsg, lParam);
+          MouseEvent mouse = User32.TryGetRawMouseEventData(uMsg, lParam);
           if (mouse != null)
           {
             System.out.println("WM_INPUT MOUSE" +
-              " usFlags=" + Integer.toHexString(mouse.usFlags) + 
-              " usButtonFlags=" + Integer.toHexString(mouse.usButtonFlags) + 
-              " usButtonData=" + Integer.toHexString(mouse.usButtonData) + 
-              " ulRawButtons=" + Integer.toHexString(mouse.ulRawButtons) + 
-              " lLastX=" + Integer.toString(mouse.lLastX, 10) +
-              " lLastY=" + Integer.toString(mouse.lLastY, 10) + 
-              " ulExtraInformation=" + Integer.toHexString(mouse.ulExtraInformation));
+              " hDevice=" + Long.toHexString(Pointer.nativeValue(mouse.hDevice)) +
+              " usFlags=" + Integer.toHexString(mouse.data.usFlags) + 
+              " usButtonFlags=" + Integer.toHexString(mouse.data.usButtonFlags) + 
+              " usButtonData=" + Integer.toHexString(mouse.data.usButtonData) + 
+              " ulRawButtons=" + Integer.toHexString(mouse.data.ulRawButtons) + 
+              " lLastX=" + Integer.toString(mouse.data.lLastX, 10) +
+              " lLastY=" + Integer.toString(mouse.data.lLastY, 10) + 
+              " ulExtraInformation=" + Integer.toHexString(mouse.data.ulExtraInformation));
           }
           return User32.library.DefWindowProcW(hwnd, uMsg, wParam, lParam);
         }
       };
       Pointer hwnd = User32.CreateMessageHandlingWindow(wndproc);
-      User32.RegisterKeyboardAndMouse(hwnd);
+      User32.RegisterToReceiveRawMouseEvents(hwnd);
       Msg msg = new Msg();
       while (User32.library.GetMessageW(msg, null, 0, 0) != 0)
       {

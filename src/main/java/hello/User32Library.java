@@ -121,6 +121,6 @@ public interface User32Library extends Library
     // If uiCommand is RIDI_DEVICEINFO, set the cbSize member of RID_DEVICE_INFO to sizeof(RID_DEVICE_INFO) before calling GetRawInputDeviceInfo.
     Memory pData,
     // The size, in bytes, of the data in pData.
-    RefInt pcbSize);
+    RefInt pcbSize) throws LastErrorException;
 }
 

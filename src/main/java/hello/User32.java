@@ -1,9 +1,11 @@
 package hello;
 
 import com.sun.jna.Callback;
+import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
+import java.util.ArrayList;
 
 public class User32
 {
@@ -15,7 +17,7 @@ public class User32
     library = (User32Library)Native.load("user32", User32Library.class);
   }
 
-  public static void RegisterKeyboardAndMouse(Pointer hwndTarget) throws Exception
+  public static void RegisterToReceiveRawMouseEvents(Pointer hwndTarget) throws Exception
   {
     // If set, this prevents any devices specified by usUsagePage or usUsage
     // from generating legacy messages. This is only for the mouse and keyboard.
@@ -70,7 +72,7 @@ public class User32
     return hwnd;
   }
   
-  public static RawMouse TryGetRawMouseEventData(int uMsg, Pointer lParam)
+  public static MouseEvent TryGetRawMouseEventData(int uMsg, Pointer lParam)
   {
     final int WM_INPUT = 0xFF;
     switch (uMsg)
@@ -88,7 +90,10 @@ public class User32
         }
         else if (data.header.dwType == RIM_TYPEMOUSE)
         {
-          return data.mouse;
+          MouseEvent result = new MouseEvent();
+          result.hDevice = data.header.hDevice;
+          result.data = data.mouse;
+          return result;
         }
         else
         {
@@ -102,5 +107,70 @@ public class User32
       }
     }
     return null;
+  }
+  
+  public static ArrayList<Mouse> GetMice() throws Exception
+  {
+    ArrayList<Mouse> results = new ArrayList<Mouse>();
+    
+    RefInt numDevices = new RefInt();
+    if (-1 == library.GetRawInputDeviceList(null, numDevices, new RawInputDeviceList().size()))
+    {
+      throw new Exception("GetRawInputDeviceList returned failure code when asked for number of devices");
+    }
+
+    // times 2 + 10 to avoid needing to handle ERROR_INSUFFICIENT_BUFFER scenarios
+    RawInputDeviceList[] devices = (RawInputDeviceList[])(new RawInputDeviceList()).toArray(numDevices.value * 2 + 10);
+    numDevices.value = devices.length;
+    int numDevices2 = library.GetRawInputDeviceList(devices, numDevices, new RawInputDeviceList().size());
+    if (-1 == numDevices2)
+    {
+      throw new Exception("GetRawInputDeviceList returned failure code when asked for all devices");
+    }
+    Memory buffer = new Memory(1000);
+    for (int i = 0; i < numDevices2; i++)
+    {
+      int RIM_TYPEMOUSE = 0;
+      int RIDI_DEVICENAME = 0x20000007;
+      if (devices[i].dwType == RIM_TYPEMOUSE)
+      {
+        RefInt nameLen = new RefInt(0);
+        int result = library.GetRawInputDeviceInfoW(devices[i].hDevice, RIDI_DEVICENAME, null, nameLen);
+        if (result != 0)
+        {
+          System.out.println("GetRawInputDeviceInfoW failed to retrieve DEVICENAME length for some mouse device");
+          continue;
+        }
+        if (nameLen.value <= 0)
+        {
+          System.out.println("GetRawInputDeviceInfoW retrieved non-positive DEVICENAME length for some mouse device");
+          continue;
+        }
+        if (buffer.size() < nameLen.value * 2) buffer = new Memory(nameLen.value * 2);
+        buffer.clear();
+        result = library.GetRawInputDeviceInfoW(devices[i].hDevice, RIDI_DEVICENAME, buffer, nameLen);
+        if (result <= 0)
+        {
+          // NOTE: this happens when connected to the PC over remote desktop (at least on my Win7 PC).
+          // I googled it. Others have seen it. Apparently you just can't enumerate remote desktop mice. Sad day. oh well.
+          System.out.println("GetRawInputDeviceInfoW returned " + Integer.toString(result, 10) + " with previously determined nameLen=" + Integer.toString(nameLen.value, 10) + " for some mouse device");
+          continue;
+        }
+
+        // TODO: I don't like JNA's getWideString() API here. It reads to a null terminator, but I know exactly how many characters should be read!
+        String hardwareId = buffer.getWideString(0);
+        //System.out.println("nameCharsLen=" + Integer.toString(result, 10) + " nameLen=" + Integer.toString(nameLen.value, 10) + " name=" + hardwareId);
+        
+        // TODO: ask for friendly name
+        
+        Mouse mouse = new Mouse();
+        mouse.hDevice = devices[i].hDevice;
+        mouse.hardwareId = hardwareId;
+        //mouse.friendlyName = "bozo the monkey";
+        results.add(mouse);
+      }
+    }
+    // TODO: I'd like to dispose 'buffer' immediately... but I'm not seeing a way to do that in the javadocs...
+    return results;
   }
 }
