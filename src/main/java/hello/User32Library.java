@@ -129,5 +129,53 @@ public interface User32Library extends Library
   // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-clipcursor
   public boolean ClipCursor(
     // A pointer to the structure that contains the screen coordinates of the upper-left and lower-right corners of the confining rectangle. If this parameter is NULL, the cursor is free to move anywhere on the screen.
-    Rect lpRect);
+    Rect lpRect) throws LastErrorException;
+
+  // Retrieves information about the specified window. The function also retrieves the value at a specified offset into the extra window memory.
+  // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowlongptrw
+  public Pointer GetWindowLongPtrW(
+    // A handle to the window and, indirectly, the class to which the window belongs.
+    Pointer hWnd,
+    // The zero-based offset to the value to be set. Valid values are in the range zero through the number of bytes of extra window memory, minus the size of a LONG_PTR.
+    // To set any other value, specify one of the following values.
+    // GWL_EXSTYLE -20 Retrieves the extended window styles.
+    // GWLP_HINSTANCE -6 Retrieves a handle to the application instance.
+    // GWLP_HWNDPARENT -8 Retrieves a handle to the parent window, if there is one.
+    // GWLP_ID -12 Retrieves the identifier of the window.
+    // GWL_STYLE -16 Gets the window style.
+    // GWLP_USERDATA -21 Gets the user data associated with the window. This data is intended for use by the application that created the window. Its value is initially zero.
+    // GWLP_WNDPROC -4 Retrieves the pointer to the window procedure, or a handle representing the pointer to the window procedure. You must use the CallWindowProc function to call the window procedure.
+    int nIndex) throws LastErrorException;
+
+  // Changes an attribute of the specified window. The function also sets a value at the specified offset in the extra window memory.
+  // If the function succeeds, the return value is the previous value of the specified offset.
+  // If the function fails, the return value is zero. To get extended error information, call GetLastError.
+  // If the previous value is zero and the function succeeds, the return value is zero, but the function does not clear the last error information.
+  // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptrw
+  public Pointer SetWindowLongPtrW(
+    // A handle to the window and, indirectly, the class to which the window belongs.
+    Pointer hWnd,
+    // The zero-based offset to the value to be set. Valid values are in the range zero through the number of bytes of extra window memory, minus the size of a LONG_PTR.
+    // To set any other value, specify one of the following values.
+    // GWL_EXSTYLE -20 Sets a new extended window style.
+    // GWLP_HINSTANCE -6 Sets a new application instance handle.
+    // GWLP_ID -12 Sets a new identifier of the child window. The window cannot be a top-level window.
+    // GWL_STYLE -16 Sets a new window style.
+    // GWLP_USERDATA -21 Sets the user data associated with the window. This data is intended for use by the application that created the window. Its value is initially zero.
+    // GWLP_WNDPROC -4 Sets a new address for the window procedure.
+    int nIndex,
+    // The replacement value.
+    WndProc dwNewLong) throws LastErrorException;
+
+  // Passes message information to the specified window procedure.
+  // This method is typically used with SetWindowLongPtr to support chained window message handling procedures for a single window.
+  // The return value specifies the result of the message processing and depends on the message sent.
+  public Pointer CallWindowProcW(
+    // The previous window procedure, as previously fetched by GetWindowLongPtr with GWLP_WNDPROC
+    Pointer lpPrevWndFunc,
+    // A handle to the window procedure to receive the message.
+    Pointer hWnd,
+    int Msg,
+    Pointer wParam,
+    Pointer lParam);
 }
