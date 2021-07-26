@@ -56,6 +56,8 @@ public class HelloWorld
         }
       };
       Pointer hwnd2 = User32.CreateExampleWindow(wndproc2);
+      boolean succeeded = User32.library.ClipCursor(new Rect(500, 500, 600, 600));
+      System.out.println("ClipCursor result = " + (succeeded ? "true" : "false"));
       
       Msg msg = new Msg();
       while (User32.library.GetMessageW(msg, null, 0, 0) != 0)

@@ -122,5 +122,12 @@ public interface User32Library extends Library
     Memory pData,
     // The size, in bytes, of the data in pData.
     RefInt pcbSize) throws LastErrorException;
-}
 
+  // Confines the cursor to a rectangular area on the screen. If a subsequent cursor position (set by the SetCursorPos function or the mouse)
+  // lies outside the rectangle, the system automatically adjusts the position to keep the cursor inside the rectangular area.
+  // If the function succeeds, the return value is nonzero. Else the return value is zero. To get extended error information, call GetLastError.
+  // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-clipcursor
+  public boolean ClipCursor(
+    // A pointer to the structure that contains the screen coordinates of the upper-left and lower-right corners of the confining rectangle. If this parameter is NULL, the cursor is free to move anywhere on the screen.
+    Rect lpRect);
+}
