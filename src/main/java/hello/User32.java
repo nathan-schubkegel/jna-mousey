@@ -53,25 +53,47 @@ public class User32
   public static Pointer CreateMessageHandlingWindow(WndProc wndproc) throws Exception
   {
     // Register the window class.
+    // TODO: kinda lame that this will only ever succeed once. Oh well. It's a learning app.
     WndClassW wc = new WndClassW();
     wc.lpfnWndProc = wndproc;
     wc.lpszClassName = new WString("RawInputListener");
     short rc = library.RegisterClassW(wc);
     if (rc == 0) throw new Exception("blah, registerClass failed");
-    
+
     // create the window
-    int WS_POPUP = (int)0x80000000;
     Pointer hwnd = library.CreateWindowExW(
       0,
       new WString("RawInputListener"),
       null,
-      WS_POPUP,
+      WindowStyle.WS_POPUP,
       0, 0, 0, 0,
       null, null, null, null);
     if (hwnd == null || Pointer.nativeValue(hwnd) == 0) throw new Exception("blah, CreateWindowExW failed");
     return hwnd;
   }
   
+  public static Pointer CreateExampleWindow(WndProc wndproc) throws Exception
+  {
+    // Register the window class.
+    // TODO: kinda lame that this will only ever succeed once. Oh well. It's a learning app.
+    WndClassW wc = new WndClassW();
+    wc.lpfnWndProc = wndproc;
+    wc.lpszClassName = new WString("ExampleWindow");
+    short rc = library.RegisterClassW(wc);
+    if (rc == 0) throw new Exception("blah, registerClass failed");
+    
+    // create the window
+    Pointer hwnd = library.CreateWindowExW(
+      0,
+      new WString("ExampleWindow"),
+      new WString("Example"),
+      WindowStyle.WS_OVERLAPPED | WindowStyle.WS_VISIBLE | WindowStyle.WS_CAPTION,
+      100, 100, 200, 300,
+      null, null, null, null);
+    if (hwnd == null || Pointer.nativeValue(hwnd) == 0) throw new Exception("blah, CreateWindowExW failed");
+    return hwnd;
+  }
+
   public static MouseEvent TryGetRawMouseEventData(int uMsg, Pointer lParam)
   {
     final int WM_INPUT = 0xFF;

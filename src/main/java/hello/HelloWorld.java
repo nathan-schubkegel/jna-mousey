@@ -21,6 +21,7 @@ public class HelloWorld
           " hardwareId=" + mouse.hardwareId);
       }
 
+      // create an invisible window that receives raw mouse event messages and prints them to the console
       WndProc wndproc = new WndProc()
       {
         public Pointer callback(Pointer hwnd, int uMsg, Pointer wParam, Pointer lParam)
@@ -43,6 +44,19 @@ public class HelloWorld
       };
       Pointer hwnd = User32.CreateMessageHandlingWindow(wndproc);
       User32.RegisterToReceiveRawMouseEvents(hwnd);
+      
+      // create a window to demonstrate cursor clipping
+      WndProc wndproc2 = new WndProc()
+      {
+        public Pointer callback(Pointer hwnd, int uMsg, Pointer wParam, Pointer lParam)
+        {
+          // TODO: is there anything else to do here?
+          System.out.println("example hwnd=" + Long.toHexString(Pointer.nativeValue(hwnd)) + " uMsg=" + Integer.toHexString(uMsg) + " wParam" + Long.toHexString(Pointer.nativeValue(wParam)) + " lParam" + Long.toHexString(Pointer.nativeValue(lParam)));
+          return User32.library.DefWindowProcW(hwnd, uMsg, wParam, lParam);
+        }
+      };
+      Pointer hwnd2 = User32.CreateExampleWindow(wndproc2);
+      
       Msg msg = new Msg();
       while (User32.library.GetMessageW(msg, null, 0, 0) != 0)
       {
