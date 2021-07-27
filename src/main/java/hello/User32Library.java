@@ -178,4 +178,24 @@ public interface User32Library extends Library
     int Msg,
     Pointer wParam,
     Pointer lParam);
+
+  // Enumerates all top-level windows on the screen by passing the handle to each window, in turn, to
+  // an application-defined callback function. EnumWindows continues until the last top-level window is
+  // enumerated or the callback function returns FALSE.
+  // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumwindows
+  public boolean EnumWindows(
+    // A pointer to an application-defined callback function.
+    EnumWindowsProc lpEnumFunc,
+    // An application-defined value to be passed to the callback function.
+    Pointer lParam) throws LastErrorException;
+  
+  // Returns true if the window is visible. 'nuff said.
+  // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-iswindowvisible
+  boolean IsWindowVisible(Pointer hwnd);
+  
+  // Retrieves the identifier of the thread that created the specified window and
+  // optionally also the identifier of the process that created the window.
+  // The return value is the identifier of the thread that created the window.
+  // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowthreadprocessid
+  int GetWindowThreadProcessId(Pointer hWnd, RefInt lpdwProcessId);
 }

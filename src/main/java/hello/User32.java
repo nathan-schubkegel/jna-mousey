@@ -195,4 +195,34 @@ public class User32
     // TODO: I'd like to dispose 'buffer' immediately... but I'm not seeing a way to do that in the javadocs...
     return results;
   }
+  
+  public static ArrayList<Pointer> GetVisibleTopLevelWindows()
+  {
+    // what's my process id?
+    int myPid = Kernel32.library.GetCurrentProcessId();
+    
+    // scan all top-level windows
+    ArrayList<Pointer> foundWindows = new ArrayList<Pointer>();
+    RefInt processId = new RefInt();
+    EnumWindowsProc proc = new EnumWindowsProc()
+    {
+      public boolean callback(Pointer hwnd, Pointer lParam)
+      {
+        // only want visible windows
+        if (library.IsWindowVisible(hwnd))
+        {
+          // only want windows in this process
+          processId.value = 0;
+          library.GetWindowThreadProcessId(hwnd, processId);
+          if (processId.value == myPid)
+          {
+            foundWindows.add(hwnd);
+          }
+        }
+        return true;
+      }
+    };
+    library.EnumWindows(proc, null);
+    return foundWindows;
+  }
 }

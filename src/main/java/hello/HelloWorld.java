@@ -43,6 +43,7 @@ public class HelloWorld
         }
       };
       Pointer hwnd = User32.CreateMessageHandlingWindow(wndproc);
+      System.out.println("created invisible message handling window hwnd=" + Long.toHexString(Pointer.nativeValue(hwnd)));
       User32.RegisterToReceiveRawMouseEvents(hwnd);
       
       // create a visible window
@@ -55,7 +56,15 @@ public class HelloWorld
         }
       };
       Pointer hwnd2 = User32.CreateExampleWindow(wndproc2);
+      System.out.println("created example visible window hwnd=" + Long.toHexString(Pointer.nativeValue(hwnd2)));
       
+      // demonstrate finding that window the hard way (i.e. suppose something else like libgdx created it)
+      ArrayList<Pointer> windows = User32.GetVisibleTopLevelWindows();
+      for (Pointer w : windows)
+      {
+        System.out.println("found my top-level window hwnd=" + Long.toHexString(Pointer.nativeValue(w)));
+      }
+
       // demonstrate installing a new window message processor on that visible window
       Pointer originalProc = User32.library.GetWindowLongPtrW(hwnd2, -4); // GWLP_WNDPROC
       WndProc wndproc3 = new WndProc()
